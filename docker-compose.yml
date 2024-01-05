@@ -1,0 +1,59 @@
+version: '3.9'
+
+networks:
+  overlay:
+
+services:
+  mysql_master:
+    image: mysql:5.7
+    platform: linux/x86_64
+    environment:
+      MYSQL_DATABASE: ${REPLICA_DB}
+      MYSQL_USER: ${REPLICA_USER}
+      MYSQL_PASSWORD: ${REPLICA_PASSWD}
+      MYSQL_ROOT_PASSWORD: ${MASTER_ROOT_PASSWD}
+      MYSQL_LOWER_CASE_TABLE_NAMES: 0
+    healthcheck:
+      test: mysqladmin ping -h 127.0.0.1 -u $$MYSQL_USER --password=$$MYSQL_PASSWORD
+      start_period: 5s
+      interval: 5s
+      timeout: 5s
+      retries: 55
+    volumes:
+      - ./etc/master.cnf:/etc/mysql/conf.d/master.cnf
+      - ./init.db/master:/docker-entrypoint-initdb.d
+      - ./.data/master:/var/lib/mysql
+    ports:
+      - "3302:3306"
+    networks:
+      - overlay
+
+  mysql_replica:
+    build:
+      context: replica
+    environment:
+      MASTER_ROOT_PASSWD: ${MASTER_ROOT_PASSWD}
+      MYSQL_DATABASE: ${REPLICA_DB}
+      MYSQL_USER: ${REPLICA_USER}
+      MYSQL_PASSWORD: ${REPLICA_PASSWD}
+      MYSQL_ROOT_PASSWORD: ${REPLICA_ROOT_PASSWD}
+      MYSQL_LOWER_CASE_TABLE_NAMES: 0
+    healthcheck:
+      test: mysqladmin ping -h 127.0.0.1 -u $$MYSQL_USER --password=$$MYSQL_PASSWORD
+      start_period: 5s
+      interval: 5s
+      timeout: 5s
+      retries: 55
+    volumes:
+      - ./etc/replica.cnf:/etc/mysql/conf.d/replica.cnf
+      - ./init.db/replica:/docker-entrypoint-initdb.d
+      - ./.data/replica:/var/lib/mysql
+    ports:
+      - "3301:3306"
+    networks:
+      - overlay
+    depends_on:
+      mysql_master:
+        condition: service_healthy
+
+

@@ -1,0 +1,5 @@
+.idea
+.data
+.env
+etc/master.cnf
+etc/replica.cnf

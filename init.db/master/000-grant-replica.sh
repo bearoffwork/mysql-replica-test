@@ -1,0 +1,6 @@
+#!/bin/bash
+
+MYSQL_PWD=$MYSQL_ROOT_PASSWORD mysql -u root -e " \
+GRANT REPLICATION SLAVE ON *.* TO '$MYSQL_USER'@'%'; \
+FLUSH PRIVILEGES; \
+"
